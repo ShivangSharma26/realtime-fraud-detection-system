@@ -1,0 +1,22 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtualenv
+venv/
+env/
+.env
+
+# Models and Data (too large for git)
+models/*.pkl
+data/*.jsonl
+data/*.parquet
+data/checkpoints/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# OS junk
+.DS_Store
+Thumbs.db

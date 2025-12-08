@@ -1,0 +1,14 @@
+apiVersion: 1
+
+datasources:
+  - name: Anomalies DB
+    type: postgres
+    access: proxy
+    url: postgres:5432
+    user: app
+    password: app
+    database: anomalies
+    jsonData:
+      sslmode: "disable" # Local development ke liye SSL band kar rahe hain
+      postgresVersion: 1200 # Approx version
+      timescaledb: false

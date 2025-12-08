@@ -1,4 +1,4 @@
-version: "3.8"
+version: "3.8" # (Isko hata bhi sakte ho, par rehne do koi baat nahi)
 
 services:
   zookeeper:
@@ -30,8 +30,8 @@ services:
       POSTGRES_PASSWORD: app
       POSTGRES_DB: anomalies
     ports:
-      - "5432:5432"
-  
+      - "5433:5432"
+
   grafana:
     image: grafana/grafana:latest
     container_name: realtime-anomaly-detection-grafana-1
@@ -42,3 +42,15 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=admin
     depends_on:
       - postgres
+    # --- YEH NAYA HISSA HAI JO ADD KARNA HAI ---
+    volumes:
+      # Grafana ka apna data save karne ke liye (taaki restart par sab ude nahi)
+      - grafana_data:/var/lib/grafana
+      # Humari banayi hui provisioning configs (datasource.yml, dashboard.yml) ko mount kar rahe hain
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      # Humara banaya hua JSON dashboard file ko mount kar rahe hain
+      - ./grafana/dashboards_json:/var/lib/grafana/dashboards
+
+# --- CORRECTED LAST PART (No Indentation) ---
+volumes:
+  grafana_data:

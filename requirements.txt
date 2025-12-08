@@ -1,0 +1,12 @@
+# Data Manipulation & ML
+numpy==1.24.3
+pandas==2.0.3
+scikit-learn==1.3.0
+Faker==19.3.0  # Fake data generate karne ke liye
+
+# Kafka & Streaming
+kafka-python==2.0.2
+pyspark==3.4.1 # Spark ke liye
+
+# Database connection (PostgreSQL)
+psycopg2-binary==2.9.7

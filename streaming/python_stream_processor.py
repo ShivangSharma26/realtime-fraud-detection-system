@@ -131,3 +131,88 @@ def write_to_postgres(df: pd.DataFrame):
         conn.close()
 
 # TODO: Add main streaming loop
+# ... (uppar ka code same rahega)
+
+def main():
+    print(f"Loading ML model from: {MODEL_PATH}")
+    try:
+        model = load(MODEL_PATH)
+        print("Model loaded successfully.")
+    except FileNotFoundError:
+        print(f"Error: Model not found at {MODEL_PATH}. Run ml/train_model.py first.")
+        sys.exit(1)
+
+    print(f"Connecting to Kafka topic '{KAFKA_TOPIC}'...")
+    try:
+        consumer = KafkaConsumer(
+            KAFKA_TOPIC,
+            bootstrap_servers=KAFKA_BOOTSTRAP,
+            # Automatically deserialize JSON data
+            value_deserializer=lambda v: json.loads(v.decode("utf-8")),
+            auto_offset_reset="latest", # Start reading new messages only
+            # group_id="anomaly-detector-group" # Optional: for multiple consumers
+        )
+        print("Kafka Consumer connected.")
+    except Exception as e:
+         print(f"Error connecting to Kafka: {e}")
+         sys.exit(1)
+
+    buffer: List[dict] = []
+    last_flush = time.time()
+
+    print("Python streaming processor started! Waiting for data...")
+    try:
+        while True:
+            # Poll for new messages (wait max 1 second)
+            msg_pack = consumer.poll(timeout_ms=1000)
+
+            any_records = False
+            for tp, messages in msg_pack.items():
+                for message in messages:
+                    any_records = True
+                    buffer.append(message.value)
+
+            # Check conditions to process the batch
+            now = time.time()
+            time_up = (now - last_flush) >= BATCH_TIMEOUT
+            buffer_full = len(buffer) >= BATCH_SIZE
+
+            if buffer and (buffer_full or time_up):
+                print(f"Scoring batch of {len(buffer)} rows (Time up: {time_up}, Full: {buffer_full})...")
+
+                # 1. Convert buffer to DataFrame
+                pdf = pd.DataFrame(buffer)
+
+                # 2. Feature Engineering (Reusing logic from training)
+                feat_df = build_features(pdf)
+                X = feat_df[FEATURE_COLUMNS]
+
+                # 3. Model Inference (Scoring)
+                # decision_function gives a score (lower is more anomalous)
+                scores = model.decision_function(X)
+                pdf["anomaly_score"] = scores
+                # If score is below threshold, mark as anomaly (1)
+                pdf["is_anomaly"] = (pdf["anomaly_score"] < THRESHOLD).astype(int)
+
+                # 4. Write results to Database
+                write_to_postgres(pdf)
+
+                anomaly_count = (pdf['is_anomaly']==1).sum()
+                print(f"✔ Processed batch. Anomalies found: {anomaly_count}. (Took {round(time.time()-now, 2)}s)")
+
+                # Reset buffer and timer
+                buffer.clear()
+                last_flush = now
+
+            # If no new records, sleep briefly to reduce CPU usage
+            if not any_records and not buffer:
+                time.sleep(0.5)
+
+    except KeyboardInterrupt:
+        print("\nStreaming processor stopped by user.")
+    finally:
+        consumer.close()
+        print("Kafka Connection closed.")
+
+if __name__ == "__main__":
+    main()

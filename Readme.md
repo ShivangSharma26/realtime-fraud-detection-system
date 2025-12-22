@@ -361,7 +361,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 👥 Authors
 
-- **SHIVANG SHARMA** - *Initial work* - [YourGitHub](https://github.com/ShivangSharma26)
+- **SHIVANG SHARMA** - *Initial work* - [MYGitHub](https://github.com/ShivangSharma26)
 
 ---
 
